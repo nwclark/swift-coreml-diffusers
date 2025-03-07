@@ -172,7 +172,7 @@ extension PipelineLoader {
                                                          configuration: configuration,
                                                          reduceMemory: model.reduceMemory)
             } else {
-                throw "Stable Diffusion XL requires macOS 14"
+                throw LolError.shitsTooOld("Stable Diffusion XL requires macOS 14")
             }
 
         } else if model.isSD3 {
@@ -181,7 +181,7 @@ extension PipelineLoader {
                                                         configuration: configuration,
                                                         reduceMemory: model.reduceMemory)
             } else {
-                throw "Stable Diffusion 3 requires macOS 14"
+                throw LolError.shitsTooOld("Stable Diffusion 3 requires macOS 14")
             }
         } else {
             pipeline = try StableDiffusionPipeline(resourcesAt: url,

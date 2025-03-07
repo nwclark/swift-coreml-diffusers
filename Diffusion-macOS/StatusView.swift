@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct StatusView: View {
-    @EnvironmentObject var generation: GenerationContext
+    @Environment(GenerationContext.self) var generation: GenerationContext
     var pipelineState: Binding<PipelineState>
     
     @State private var showErrorPopover = false

@@ -71,7 +71,7 @@ class Downloader: NSObject, ObservableObject {
         switch downloadState.value {
         case .completed(let url): return url
         case .failed(let error):  throw error
-        default:                  throw("Should never happen, lol")
+        default:                  throw(LolError.inconceivable("Should never happen, lol"))
         }
     }
     
@@ -87,7 +87,7 @@ extension Downloader: URLSessionDelegate, URLSessionDownloadDelegate {
 
     func urlSession(_: URLSession, downloadTask _: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         guard FileManager.default.fileExists(atPath: location.path) else {
-            downloadState.value = .failed("Invalid download location received: \(location)")
+            downloadState.value = .failed(LolError.invalidDownloadURL("Invalid download location received: \(location)"))
             return
         }
         do {

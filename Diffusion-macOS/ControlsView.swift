@@ -47,7 +47,7 @@ struct LabelToggleDisclosureGroupStyle: DisclosureGroupStyle {
 }
 
 struct ControlsView: View {
-    @EnvironmentObject var generation: GenerationContext
+    @Environment(GenerationContext.self) var generation: GenerationContext
 
     static let models = ModelInfo.MODELS
     
@@ -78,6 +78,15 @@ struct ControlsView: View {
     @State private var showAdvancedHelp = false
     @State private var positiveTokenCount: Int = 0
     @State private var negativeTokenCount: Int = 0
+
+    @State private var negativePrompt = ""
+    @State private var positivePrompt = DEFAULT_PROMPT
+    @State private var guidanceScale = Settings.shared.guidanceScale
+    @State private var steps: Double = Settings.shared.stepCount
+    @State private var disableSafety = false
+    @State private var previews: Double = runningOnMac ? Settings.shared.previewCount : 0.0
+    @State private var computeUnits: ComputeUnits = Settings.shared.userSelectedComputeUnits ?? ModelInfo.defaultComputeUnits
+    @State private var seed: UInt32 = Settings.shared.seed
 
     let maxSeed: UInt32 = UInt32.max
     private var textFieldLabelSeed: String { generation.seed < 1 ? "Random Seed" : "Seed" }
@@ -163,15 +172,15 @@ struct ControlsView: View {
     fileprivate func prompts() -> some View {
         VStack {
             Spacer()
-            PromptTextField(text: $generation.positivePrompt, isPositivePrompt: true, model: $model)
-                .onChange(of: generation.positivePrompt) { prompt in
-                    Settings.shared.prompt = prompt
+            PromptTextField(text: $positivePrompt, isPositivePrompt: true, model: $model)
+                .onChange(of: positivePrompt) { _, newValue in
+                    Settings.shared.prompt = newValue
                 }
                 .padding(.top, 5)
             Spacer()
-            PromptTextField(text: $generation.negativePrompt, isPositivePrompt: false, model: $model)
-                .onChange(of: generation.negativePrompt) { negativePrompt in
-                    Settings.shared.negativePrompt = negativePrompt
+            PromptTextField(text: $negativePrompt, isPositivePrompt: false, model: $model)
+                .onChange(of: negativePrompt) { _, newValue in
+                    Settings.shared.negativePrompt = newValue
                 }
                 .padding(.bottom, 5)
             Spacer()
@@ -197,14 +206,14 @@ struct ControlsView: View {
                             }
                             Text("Reveal in Finder…").tag(revealOption)
                         }
-                        .onChange(of: model) { selection in
-                            guard selection != revealOption else {
+                        .onChange(of: model) { _, newValue in
+                            guard newValue != revealOption else {
                                 // The reveal option has been requested - open the models folder in Finder
                                 NSWorkspace.shared.selectFile(modelFilename, inFileViewerRootedAtPath: PipelineLoader.models.path)
                                 model = Settings.shared.currentModel.modelVersion
                                 return
                             }
-                            guard let model = ModelInfo.from(modelVersion: selection) else { return }
+                            guard let model = ModelInfo.from(modelVersion: newValue) else { return }
                             modelDidChange(model: model)
                         }
                     } label: {
@@ -253,13 +262,13 @@ struct ControlsView: View {
 
                     let guidanceScaleValue = generation.guidanceScale.formatted("%.1f")
                     DisclosureGroup(isExpanded: $disclosedGuidance) {
-                        CompactSlider(value: $generation.guidanceScale, in: 0...20, step: 0.5) {
+                        CompactSlider(value: $guidanceScale, in: 0...20, step: 0.5) {
                             Text("Guidance Scale")
                             Spacer()
                             Text(guidanceScaleValue)
                         }
-                        .onChange(of: generation.guidanceScale) { guidanceScale in
-                            Settings.shared.guidanceScale = guidanceScale
+                        .onChange(of: guidanceScale) { _, newValue in
+                            Settings.shared.guidanceScale = newValue
                         }
                         .padding(.leading, 10)
                     } label: {
@@ -284,13 +293,13 @@ struct ControlsView: View {
                     }
 
                     DisclosureGroup(isExpanded: $disclosedSteps) {
-                        CompactSlider(value: $generation.steps, in: 1...150, step: 1) {
+                        CompactSlider(value: $steps, in: 1...150, step: 1) {
                             Text("Steps")
                             Spacer()
                             Text("\(Int(generation.steps))")
                         }
-                        .onChange(of: generation.steps) { steps in
-                            Settings.shared.stepCount = steps
+                        .onChange(of: steps) { _, newValue in
+                            Settings.shared.stepCount = newValue
                         }
                         .padding(.leading, 10)
                     } label: {
@@ -314,13 +323,14 @@ struct ControlsView: View {
                     }
 
                     DisclosureGroup(isExpanded: $disclosedPreview) {
-                        CompactSlider(value: $generation.previews, in: 0...25, step: 1) {
+                        CompactSlider(value: $previews, in: 0...25, step: 1) {
                             Text("Previews")
                             Spacer()
                             Text("\(Int(generation.previews))")
                         }
-                        .onChange(of: generation.previews) { previews in
-                            Settings.shared.previewCount = previews
+                        .onChange(of: previews) { _, newValue in
+//                            Settings.shared.previewCount = newValue
+                            generation.previews = newValue
                         }
                         .padding(.leading, 10)
                     } label: {
@@ -372,7 +382,7 @@ struct ControlsView: View {
                         let isNeuralEngineDisabled = !(ModelInfo.from(modelVersion: model)?.supportsNeuralEngine ?? true)
                         DisclosureGroup(isExpanded: $disclosedAdvanced) {
                             HStack {
-                                Picker(selection: $generation.computeUnits, label: Text("Use")) {
+                                Picker(selection: $computeUnits, label: Text("Use")) {
                                     Text("GPU").tag(ComputeUnits.cpuAndGPU)
                                     Text("Neural Engine\(isNeuralEngineDisabled ? " (unavailable)" : "")")
                                         .foregroundColor(isNeuralEngineDisabled ? .secondary : .primary)
@@ -381,13 +391,13 @@ struct ControlsView: View {
                                 }.pickerStyle(.radioGroup).padding(.leading)
                                 Spacer()
                             }
-                            .onChange(of: generation.computeUnits) { units in
+                            .onChange(of: computeUnits) { _, newValue in
                                 guard let currentModel = ModelInfo.from(modelVersion: model) else { return }
-                                if isNeuralEngineDisabled && units == .cpuAndNeuralEngine {
+                                if isNeuralEngineDisabled && newValue == .cpuAndNeuralEngine {
                                     resetComputeUnitsState()
                                     return
                                 }
-                                let variantDownloaded = isModelDownloaded(currentModel, computeUnits: units)
+                                let variantDownloaded = isModelDownloaded(currentModel, computeUnits: newValue)
                                 if variantDownloaded {
                                     updateComputeUnitsState()
                                 } else {
@@ -422,7 +432,8 @@ struct ControlsView: View {
             }
             .disclosureGroupStyle(LabelToggleDisclosureGroupStyle())
             
-            Toggle("Disable Safety Checker", isOn: $generation.disableSafety).onChange(of: generation.disableSafety) { value in
+            Toggle("Disable Safety Checker", isOn: $disableSafety)
+                .onChange(of: disableSafety) {
                 updateSafetyCheckerState()
             }
                 .popover(isPresented: $mustShowSafetyCheckerDisclaimer) {
@@ -475,7 +486,7 @@ struct ControlsView: View {
         return HStack {
             TextField("", text: seedBinding)
                 .multilineTextAlignment(.trailing)
-                .onChange(of: seedBinding.wrappedValue, perform: { newValue in
+                .onChange(of: seedBinding.wrappedValue) { _, newValue in
                     if let seed = UInt32(newValue) {
                         generation.seed = seed
                         Settings.shared.seed = seed
@@ -483,14 +494,25 @@ struct ControlsView: View {
                         generation.seed = 0
                         Settings.shared.seed = 0
                     }
-                })
+                }
                 .onReceive(Just(seedBinding.wrappedValue)) { newValue in
                     let filtered = newValue.filter { "0123456789".contains($0) }
                     if filtered != newValue {
                         seedBinding.wrappedValue = filtered
                     }
                 }
-            Stepper("", value: $generation.seed, in: 0...UInt32.max)
+            Stepper("", value: $seed, in: 0...UInt32.max)
+                .onChange(of: seed) { oldValue, newValue in
+                    generation.seed = newValue
+                }
         }
     }
+}
+
+
+#Preview {
+    @Previewable @State var generation = GenerationContext()
+    ControlsView()
+        .environment(generation)
+        .frame(width: 350, height: 600)
 }

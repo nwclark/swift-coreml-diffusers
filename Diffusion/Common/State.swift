@@ -12,7 +12,7 @@ import StableDiffusion
 import CoreML
 
 let DEFAULT_MODEL = ModelInfo.sd3
-let DEFAULT_PROMPT = "Labrador in the style of Vermeer"
+let DEFAULT_PROMPT = "A poodle in the shape of a hot dog"
 
 enum GenerationState {
     case startup
@@ -42,10 +42,11 @@ public enum StableDiffusionScheduler: String {
     }
 }
 
-class GenerationContext: ObservableObject {
+@Observable
+class GenerationContext {
     let scheduler = StableDiffusionScheduler.dpmSolverMultistepScheduler
 
-    @Published var pipeline: Pipeline? = nil {
+     var pipeline: Pipeline? = nil {
         didSet {
             if let pipeline = pipeline {
                 progressSubscriber = pipeline
@@ -59,21 +60,21 @@ class GenerationContext: ObservableObject {
             }
         }
     }
-    @Published var state: GenerationState = .startup
+     var state: GenerationState = .startup
     
-    @Published var positivePrompt = Settings.shared.prompt
-    @Published var negativePrompt = Settings.shared.negativePrompt
+     var positivePrompt = Settings.shared.prompt
+     var negativePrompt = Settings.shared.negativePrompt
 
     // FIXME: Double to support the slider component
-    @Published var steps: Double = Settings.shared.stepCount
-    @Published var numImages: Double = 1.0
-    @Published var seed: UInt32 = Settings.shared.seed
-    @Published var guidanceScale: Double = Settings.shared.guidanceScale
-    @Published var previews: Double = runningOnMac ? Settings.shared.previewCount : 0.0
-    @Published var disableSafety = false
-    @Published var previewImage: CGImage? = nil
+     var steps: Double = Settings.shared.stepCount
+     var numImages: Double = 1.0
+     var seed: UInt32 = Settings.shared.seed
+     var guidanceScale: Double = Settings.shared.guidanceScale
+     var previews: Double = runningOnMac ? Settings.shared.previewCount : 0.0
+     var disableSafety = false
+     var previewImage: CGImage? = nil
 
-    @Published var computeUnits: ComputeUnits = Settings.shared.userSelectedComputeUnits ?? ModelInfo.defaultComputeUnits
+     var computeUnits: ComputeUnits = Settings.shared.userSelectedComputeUnits ?? ModelInfo.defaultComputeUnits
 
     private var progressSubscriber: Cancellable?
 
@@ -88,7 +89,7 @@ class GenerationContext: ObservableObject {
     }
 
     func generate() async throws -> GenerationResult {
-        guard let pipeline = pipeline else { throw "No pipeline" }
+        guard let pipeline = pipeline else { throw LolError.noPipeline("No pipeline") }
         return try pipeline.generate(
             prompt: positivePrompt,
             negativePrompt: negativePrompt,

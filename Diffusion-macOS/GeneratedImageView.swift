@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct GeneratedImageView: View {
-    @EnvironmentObject var generation: GenerationContext
+    @Environment(GenerationContext.self) var generation
 
     var body: some View {
         switch generation.state {
@@ -67,4 +67,9 @@ struct GeneratedImageView: View {
             return AnyView(Text("Generation canceled"))
         }
     }
+}
+
+
+#Preview {
+    GeneratedImageView()
 }

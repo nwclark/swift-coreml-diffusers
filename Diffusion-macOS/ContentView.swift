@@ -63,8 +63,7 @@ struct ShareButtons: View {
 }
 
 struct ContentView: View {
-    @StateObject var generation = GenerationContext()
-
+    @Environment(GenerationContext.self) var generation
     func toolbar() -> any View {
         if case .complete(let prompt, let cgImage, _, _) = generation.state, let cgImage = cgImage {
             // TODO: share seed too
@@ -90,12 +89,11 @@ struct ContentView: View {
                 }
 
         }
-        .environmentObject(generation)
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
+#Preview ("Content View") {
+    @Previewable @State var generation = GenerationContext()
+    ContentView()
+        .environment(generation)
 }

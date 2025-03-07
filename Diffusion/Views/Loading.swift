@@ -17,7 +17,7 @@ func iosModel() -> ModelInfo {
 
 struct LoadingView: View {
 
-    @StateObject var generation = GenerationContext()
+    @State var generation = GenerationContext()
 
     @State private var preparationPhase = "Downloading…"
     @State private var downloadProgress: Double = 0
@@ -42,7 +42,7 @@ struct LoadingView: View {
             }
         }
         .animation(.easeIn, value: currentView)
-        .environmentObject(generation)
+        .environment(generation)
         .onAppear {
             Task.init {
                 let loader = PipelineLoader(model: iosModel())
