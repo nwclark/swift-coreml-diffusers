@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum LolError: Error {
+enum LolError: LocalizedError {
     case inconceivable(String)
     case invalidDownloadURL(String)
     case noPipeline(String)

@@ -11,8 +11,11 @@ import SwiftUI
 import StableDiffusion
 import CoreML
 
-let DEFAULT_MODEL = ModelInfo.sd3
-let DEFAULT_PROMPT = "A poodle in the shape of a hot dog"
+enum Constants {
+    static let DEFAULT_MODEL = ModelInfo.sd3
+    static let DEFAULT_PROMPT = "A poodle in the shape of a hot dog"
+}
+
 
 enum GenerationState {
     case startup
@@ -46,7 +49,7 @@ public enum StableDiffusionScheduler: String {
 class GenerationContext {
     let scheduler = StableDiffusionScheduler.dpmSolverMultistepScheduler
 
-     var pipeline: Pipeline? = nil {
+    var pipeline: Pipeline? = nil {
         didSet {
             if let pipeline = pipeline {
                 progressSubscriber = pipeline
@@ -60,23 +63,43 @@ class GenerationContext {
             }
         }
     }
-     var state: GenerationState = .startup
-    
-     var positivePrompt = Settings.shared.prompt
-     var negativePrompt = Settings.shared.negativePrompt
+
+    var state: GenerationState = .startup
+
+    var positivePrompt: String {
+        get {
+            return Settings.shared.prompt
+        }
+        set {
+            Settings.shared.prompt = newValue
+        }
+    }
+
+    var negativePrompt: String {
+        get {
+            return Settings.shared.negativePrompt
+        }
+        set {
+            Settings.shared.negativePrompt = newValue
+        }
+    }
 
     // FIXME: Double to support the slider component
-     var steps: Double = Settings.shared.stepCount
-     var numImages: Double = 1.0
-     var seed: UInt32 = Settings.shared.seed
-     var guidanceScale: Double = Settings.shared.guidanceScale
-     var previews: Double = runningOnMac ? Settings.shared.previewCount : 0.0
-     var disableSafety = false
-     var previewImage: CGImage? = nil
+    var steps: Double = Settings.shared.stepCount
+    var numImages: Double = 1.0
+    var seed: UInt32 = Settings.shared.seed
+    var guidanceScale: Double = Settings.shared.guidanceScale
+    var previews: Double = runningOnMac ? Settings.shared.previewCount : 0.0
+    var disableSafety = false
+    var previewImage: CGImage? = nil
 
-     var computeUnits: ComputeUnits = Settings.shared.userSelectedComputeUnits ?? ModelInfo.defaultComputeUnits
+    var computeUnits: ComputeUnits = Settings.shared.userSelectedComputeUnits ?? ModelInfo.defaultComputeUnits
 
     private var progressSubscriber: Cancellable?
+
+    init() {
+        self.positivePrompt = Constants.DEFAULT_PROMPT
+    }
 
     private func updatePreviewIfNeeded(_ progress: StableDiffusionProgress) {
         if previews == 0 || progress.step == 0 {
@@ -101,7 +124,7 @@ class GenerationContext {
             disableSafety: disableSafety
         )
     }
-    
+
     func cancelGeneration() {
         pipeline?.setCancelled()
     }
@@ -109,9 +132,9 @@ class GenerationContext {
 
 class Settings {
     static let shared = Settings()
-    
+
     let defaults = UserDefaults.standard
-    
+
     enum Keys: String {
         case model
         case safetyCheckerDisclaimer
@@ -129,7 +152,7 @@ class Settings {
             Keys.model.rawValue: ModelInfo.v2Base.modelId,
             Keys.safetyCheckerDisclaimer.rawValue: false,
             Keys.computeUnits.rawValue: -1,      // Use default
-            Keys.prompt.rawValue: DEFAULT_PROMPT,
+            Keys.prompt.rawValue: Constants.DEFAULT_PROMPT,
             Keys.negativePrompt.rawValue: "",
             Keys.guidanceScale.rawValue: 7.5,
             Keys.stepCount.rawValue: 25,
@@ -143,8 +166,8 @@ class Settings {
             defaults.set(newValue.modelId, forKey: Keys.model.rawValue)
         }
         get {
-            guard let modelId = defaults.string(forKey: Keys.model.rawValue) else { return DEFAULT_MODEL }
-            return ModelInfo.from(modelId: modelId) ?? DEFAULT_MODEL
+            guard let modelId = defaults.string(forKey: Keys.model.rawValue) else { return Constants.DEFAULT_MODEL }
+            return ModelInfo.from(modelId: modelId) ?? Constants.DEFAULT_MODEL
         }
     }
 
@@ -153,7 +176,7 @@ class Settings {
             defaults.set(newValue, forKey: Keys.prompt.rawValue)
         }
         get {
-            return defaults.string(forKey: Keys.prompt.rawValue) ?? DEFAULT_PROMPT
+            return defaults.string(forKey: Keys.prompt.rawValue) ?? Constants.DEFAULT_PROMPT
         }
     }
 
@@ -213,7 +236,7 @@ class Settings {
             return defaults.bool(forKey: Keys.safetyCheckerDisclaimer.rawValue)
         }
     }
-    
+
     /// Returns the option selected by the user, if overridden
     /// `nil` means: guess best
     var userSelectedComputeUnits: ComputeUnits? {
@@ -246,9 +269,9 @@ class Settings {
     }
 
     func tempStorageURL() -> URL {
-        
+
         let tmpDir = applicationSupportURL().appendingPathComponent("hf-diffusion-tmp")
-        
+
         // Create directory if it doesn't exist
         if !FileManager.default.fileExists(atPath: tmpDir.path) {
             do {
@@ -258,7 +281,7 @@ class Settings {
                 return FileManager.default.temporaryDirectory
             }
         }
-        
+
         return tmpDir
     }
 

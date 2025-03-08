@@ -69,7 +69,7 @@ struct ContentView: View {
             // TODO: share seed too
             return ShareButtons(image: cgImage, name: prompt)
         } else {
-            let prompt = DEFAULT_PROMPT
+            let prompt = Constants.DEFAULT_PROMPT
             let cgImage = NSImage(imageLiteralResourceName: "placeholder").cgImage(forProposedRect: nil, context: nil, hints: nil)!
             return ShareButtons(image: cgImage, name: prompt)
         }
@@ -82,12 +82,12 @@ struct ContentView: View {
         } detail: {
             GeneratedImageView()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 512, height: 512)
+                .frame(minWidth: 512, minHeight: 512)
                 .cornerRadius(15)
                 .toolbar {
                     AnyView(toolbar())
                 }
-
+                .padding()
         }
     }
 }

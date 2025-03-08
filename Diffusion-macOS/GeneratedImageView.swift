@@ -29,7 +29,8 @@ struct GeneratedImageView: View {
                     if let safeImage = generation.previewImage {
                         Image(safeImage, scale: 1, label: Text("generated"))
                             .resizable()
-                            .clipShape(RoundedRectangle(cornerRadius: 20))                        
+                            .frame(width: CGFloat(safeImage.width), height: CGFloat(safeImage.height))
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
                     }
                 }
                 HStack {
@@ -50,6 +51,7 @@ struct GeneratedImageView: View {
             return AnyView(
                     Image(theImage, scale: 1, label: Text("generated"))
                     .resizable()
+                    .frame(width: CGFloat(theImage.width), height: CGFloat(theImage.height))
                     .clipShape(RoundedRectangle(cornerRadius: 20))
                     .contextMenu {
                         Button {
@@ -71,5 +73,9 @@ struct GeneratedImageView: View {
 
 
 #Preview {
+    @Previewable @State var generater =  GenerationContext()
     GeneratedImageView()
+        .frame(width: 512, height: 512)
+        .environment(generater)
+
 }

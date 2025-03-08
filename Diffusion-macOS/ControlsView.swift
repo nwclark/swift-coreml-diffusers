@@ -79,10 +79,6 @@ struct ControlsView: View {
     @State private var positiveTokenCount: Int = 0
     @State private var negativeTokenCount: Int = 0
 
-    @State private var negativePrompt = ""
-    @State private var positivePrompt = DEFAULT_PROMPT
-    @State private var guidanceScale = Settings.shared.guidanceScale
-    @State private var steps: Double = Settings.shared.stepCount
     @State private var disableSafety = false
     @State private var previews: Double = runningOnMac ? Settings.shared.previewCount : 0.0
     @State private var computeUnits: ComputeUnits = Settings.shared.userSelectedComputeUnits ?? ModelInfo.defaultComputeUnits
@@ -170,18 +166,13 @@ struct ControlsView: View {
     }
     
     fileprivate func prompts() -> some View {
-        VStack {
+        @Bindable var generation = generation
+        return VStack {
             Spacer()
-            PromptTextField(text: $positivePrompt, isPositivePrompt: true, model: $model)
-                .onChange(of: positivePrompt) { _, newValue in
-                    Settings.shared.prompt = newValue
-                }
+            PromptTextField(text: $generation.positivePrompt, isPositivePrompt: true, model: $model)
                 .padding(.top, 5)
             Spacer()
-            PromptTextField(text: $negativePrompt, isPositivePrompt: false, model: $model)
-                .onChange(of: negativePrompt) { _, newValue in
-                    Settings.shared.negativePrompt = newValue
-                }
+            PromptTextField(text: $generation.negativePrompt, isPositivePrompt: false, model: $model)
                 .padding(.bottom, 5)
             Spacer()
         }
@@ -189,8 +180,9 @@ struct ControlsView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading) {
-            
+        @Bindable var generation = generation
+        return VStack(alignment: .leading) {
+
             Label("Generation Options", systemImage: "gearshape.2")
                 .font(.headline)
                 .fontWeight(.bold)
@@ -262,13 +254,10 @@ struct ControlsView: View {
 
                     let guidanceScaleValue = generation.guidanceScale.formatted("%.1f")
                     DisclosureGroup(isExpanded: $disclosedGuidance) {
-                        CompactSlider(value: $guidanceScale, in: 0...20, step: 0.5) {
+                        CompactSlider(value: $generation.guidanceScale, in: 0...20, step: 0.5) {
                             Text("Guidance Scale")
                             Spacer()
                             Text(guidanceScaleValue)
-                        }
-                        .onChange(of: guidanceScale) { _, newValue in
-                            Settings.shared.guidanceScale = newValue
                         }
                         .padding(.leading, 10)
                     } label: {
@@ -293,13 +282,10 @@ struct ControlsView: View {
                     }
 
                     DisclosureGroup(isExpanded: $disclosedSteps) {
-                        CompactSlider(value: $steps, in: 1...150, step: 1) {
+                        CompactSlider(value: $generation.steps, in: 1...150, step: 1) {
                             Text("Steps")
                             Spacer()
                             Text("\(Int(generation.steps))")
-                        }
-                        .onChange(of: steps) { _, newValue in
-                            Settings.shared.stepCount = newValue
                         }
                         .padding(.leading, 10)
                     } label: {
