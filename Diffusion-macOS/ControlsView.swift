@@ -80,9 +80,7 @@ struct ControlsView: View {
     @State private var negativeTokenCount: Int = 0
 
     @State private var disableSafety = false
-    @State private var previews: Double = runningOnMac ? Settings.shared.previewCount : 0.0
     @State private var computeUnits: ComputeUnits = Settings.shared.userSelectedComputeUnits ?? ModelInfo.defaultComputeUnits
-    @State private var seed: UInt32 = Settings.shared.seed
 
     let maxSeed: UInt32 = UInt32.max
     private var textFieldLabelSeed: String { generation.seed < 1 ? "Random Seed" : "Seed" }
@@ -257,7 +255,7 @@ struct ControlsView: View {
                         CompactSlider(value: $generation.guidanceScale, in: 0...20, step: 0.5) {
                             Text("Guidance Scale")
                             Spacer()
-                            Text(guidanceScaleValue)
+                            Text(generation.guidanceScale.formatted("%.1f"))
                         }
                         .padding(.leading, 10)
                     } label: {
@@ -309,14 +307,10 @@ struct ControlsView: View {
                     }
 
                     DisclosureGroup(isExpanded: $disclosedPreview) {
-                        CompactSlider(value: $previews, in: 0...25, step: 1) {
+                        CompactSlider(value: $generation.previews, in: 0...generation.steps, step: 1) {
                             Text("Previews")
                             Spacer()
                             Text("\(Int(generation.previews))")
-                        }
-                        .onChange(of: previews) { _, newValue in
-//                            Settings.shared.previewCount = newValue
-                            generation.previews = newValue
                         }
                         .padding(.leading, 10)
                     } label: {
@@ -454,43 +448,11 @@ struct ControlsView: View {
     }
     
     fileprivate func discloseSeedContent() -> some View {
-        let seedBinding = Binding<String>(
-            get: {
-                String(generation.seed)
-            },
-            set: { newValue in
-                if let seed = UInt32(newValue) {
-                    generation.seed = seed
-                    Settings.shared.seed = seed
-                } else {
-                    generation.seed = 0
-                    Settings.shared.seed = 0
-                }
-            }
-        )
-        
+        @Bindable var generation = generation
+
         return HStack {
-            TextField("", text: seedBinding)
-                .multilineTextAlignment(.trailing)
-                .onChange(of: seedBinding.wrappedValue) { _, newValue in
-                    if let seed = UInt32(newValue) {
-                        generation.seed = seed
-                        Settings.shared.seed = seed
-                    } else {
-                        generation.seed = 0
-                        Settings.shared.seed = 0
-                    }
-                }
-                .onReceive(Just(seedBinding.wrappedValue)) { newValue in
-                    let filtered = newValue.filter { "0123456789".contains($0) }
-                    if filtered != newValue {
-                        seedBinding.wrappedValue = filtered
-                    }
-                }
-            Stepper("", value: $seed, in: 0...UInt32.max)
-                .onChange(of: seed) { oldValue, newValue in
-                    generation.seed = newValue
-                }
+            Text("\(generation.seed)")
+            Stepper("", value: $generation.seed, in: 0...UInt32.max)
         }
     }
 }

@@ -20,7 +20,7 @@ enum Constants {
 enum GenerationState {
     case startup
     case running(StableDiffusionProgress?)
-    case complete(String, CGImage?, UInt32, TimeInterval?)
+    case complete(String, CGImage?, UInt32, TimeInterval?, Double?)
     case userCanceled
     case failed(Error)
 }
@@ -68,28 +68,78 @@ class GenerationContext {
 
     var positivePrompt: String {
         get {
+            access(keyPath: \.positivePrompt)
             return Settings.shared.prompt
         }
         set {
-            Settings.shared.prompt = newValue
+            withMutation(keyPath: \.positivePrompt) {
+                Settings.shared.prompt = newValue
+            }
         }
     }
 
     var negativePrompt: String {
         get {
+            access(keyPath: \.negativePrompt)
             return Settings.shared.negativePrompt
         }
         set {
-            Settings.shared.negativePrompt = newValue
+            withMutation(keyPath: \.negativePrompt) {
+                Settings.shared.negativePrompt = newValue
+            }
         }
     }
 
     // FIXME: Double to support the slider component
-    var steps: Double = Settings.shared.stepCount
+    var steps: Double {
+        get {
+            access(keyPath: \.steps)
+            return Settings.shared.stepCount
+        }
+        set {
+            withMutation(keyPath: \.steps) {
+                Settings.shared.stepCount = newValue
+            }
+        }
+    }
+
     var numImages: Double = 1.0
-    var seed: UInt32 = Settings.shared.seed
-    var guidanceScale: Double = Settings.shared.guidanceScale
-    var previews: Double = runningOnMac ? Settings.shared.previewCount : 0.0
+
+    var seed: UInt32 {
+        get {
+            access(keyPath: \.seed)
+            return Settings.shared.seed
+        }
+        set {
+            withMutation(keyPath: \.seed) {
+                Settings.shared.seed = newValue
+            }
+        }
+    }
+
+    var guidanceScale: Double {
+        get {
+            access(keyPath: \.guidanceScale)
+            return Settings.shared.guidanceScale
+        } set {
+            withMutation(keyPath: \.guidanceScale) {
+                Settings.shared.guidanceScale = newValue
+            }
+        }
+    }
+
+    var previews: Double {
+        get {
+            access(keyPath: \.previews)
+            return runningOnMac ? Settings.shared.previewCount : 0.0
+        }
+        set {
+            withMutation(keyPath: \.previews) {
+                Settings.shared.previewCount = newValue
+            }
+        }
+    }
+
     var disableSafety = false
     var previewImage: CGImage? = nil
 

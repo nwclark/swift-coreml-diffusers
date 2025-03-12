@@ -65,7 +65,7 @@ struct ShareButtons: View {
 struct ContentView: View {
     @Environment(GenerationContext.self) var generation
     func toolbar() -> any View {
-        if case .complete(let prompt, let cgImage, _, _) = generation.state, let cgImage = cgImage {
+        if case .complete(let prompt, let cgImage, _, _, _) = generation.state, let cgImage = cgImage {
             // TODO: share seed too
             return ShareButtons(image: cgImage, name: prompt)
         } else {
