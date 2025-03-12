@@ -52,11 +52,10 @@ struct ShareButtons: View {
 }
 
 struct ImageWithPlaceholder: View {
-    @EnvironmentObject var generation: GenerationContext
-    var state: Binding<GenerationState>
+    @Environment(GenerationContext.self) var generation
         
     var body: some View {
-        switch state.wrappedValue {
+        switch generation.state {
         case .startup: return AnyView(Image("placeholder").resizable())
         case .running(let progress):
             guard let progress = progress, progress.stepCount > 0 else {
@@ -106,7 +105,8 @@ struct ImageWithPlaceholder: View {
 }
 
 struct TextToImage: View {
-    @EnvironmentObject var generation: GenerationContext
+    @Environment(GenerationContext.self) var generation
+    @State private var positivePrompt = ""
 
     func submit() {
         if case .running = generation.state { return }
@@ -124,18 +124,17 @@ struct TextToImage: View {
     var body: some View {
         VStack {
             HStack {
-                PromptTextField(text: $generation.positivePrompt, isPositivePrompt: true, model: iosModel().modelVersion)
+                PromptTextField(text: $positivePrompt, isPositivePrompt: true, model: iosModel().modelVersion)
                 Button("Generate") {
                     submit()
                 }
                 .padding()
                 .buttonStyle(.borderedProminent)
             }
-            ImageWithPlaceholder(state: $generation.state)
+            ImageWithPlaceholder()
                 .scaledToFit()
             Spacer()
         }
         .padding()
-        .environmentObject(generation)
     }
 }

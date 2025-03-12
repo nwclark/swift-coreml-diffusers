@@ -63,14 +63,13 @@ struct ShareButtons: View {
 }
 
 struct ContentView: View {
-    @StateObject var generation = GenerationContext()
-
+    @Environment(GenerationContext.self) var generation
     func toolbar() -> any View {
-        if case .complete(let prompt, let cgImage, _, _) = generation.state, let cgImage = cgImage {
+        if case .complete(let prompt, let cgImage, _, _, _) = generation.state, let cgImage = cgImage {
             // TODO: share seed too
             return ShareButtons(image: cgImage, name: prompt)
         } else {
-            let prompt = DEFAULT_PROMPT
+            let prompt = Constants.DEFAULT_PROMPT
             let cgImage = NSImage(imageLiteralResourceName: "placeholder").cgImage(forProposedRect: nil, context: nil, hints: nil)!
             return ShareButtons(image: cgImage, name: prompt)
         }
@@ -83,19 +82,18 @@ struct ContentView: View {
         } detail: {
             GeneratedImageView()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 512, height: 512)
+                .frame(minWidth: 512, minHeight: 512)
                 .cornerRadius(15)
                 .toolbar {
                     AnyView(toolbar())
                 }
-
+                .padding()
         }
-        .environmentObject(generation)
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
+#Preview ("Content View") {
+    @Previewable @State var generation = GenerationContext()
+    ContentView()
+        .environment(generation)
 }

@@ -7,9 +7,10 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct GeneratedImageView: View {
-    @EnvironmentObject var generation: GenerationContext
+    @Environment(GenerationContext.self) var generation
 
     var body: some View {
         switch generation.state {
@@ -29,7 +30,8 @@ struct GeneratedImageView: View {
                     if let safeImage = generation.previewImage {
                         Image(safeImage, scale: 1, label: Text("generated"))
                             .resizable()
-                            .clipShape(RoundedRectangle(cornerRadius: 20))                        
+                            .frame(width: CGFloat(safeImage.width), height: CGFloat(safeImage.height))
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
                     }
                 }
                 HStack {
@@ -42,29 +44,47 @@ struct GeneratedImageView: View {
                     .buttonStyle(.plain)
                 }
             })
-        case .complete(_, let image, _, _):
+        case .complete(_, let image, _, _, _):
             guard let theImage = image else {
                 return AnyView(Image(systemName: "exclamationmark.triangle").resizable())
             }
             
             return AnyView(
+                withAnimation(.bouncy) {
                     Image(theImage, scale: 1, label: Text("generated"))
-                    .resizable()
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                    .contextMenu {
-                        Button {
-                            NSPasteboard.general.clearContents()
-                            let nsimage = NSImage(cgImage: theImage, size: NSSize(width: theImage.width, height: theImage.height))
-                            NSPasteboard.general.writeObjects([nsimage])
-                        } label: {
-                            Text("Copy Photo")
+                        .resizable()
+                        .frame(width: CGFloat(theImage.width), height: CGFloat(theImage.height))
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .contextMenu {
+                            Button {
+                                NSPasteboard.general.clearContents()
+                                let nsimage = NSImage(cgImage: theImage, size: NSSize(width: theImage.width, height: theImage.height))
+                                NSPasteboard.general.writeObjects([nsimage])
+                            } label: {
+                                Text("Copy Photo")
+                            }
                         }
-                    }
-            )
+                        .onDrag({
+                            let data = NSImage(cgImage: theImage, size: .zero).tiffRepresentation
+                            let provider = NSItemProvider(item: data as NSSecureCoding?, typeIdentifier: UTType.tiff.identifier)
+                            return provider
+                        }, preview: {
+                            Image(theImage, scale: 1, label: Text("Whee!"))
+                        })
+                })
         case .failed(_):
             return AnyView(Image(systemName: "exclamationmark.triangle").resizable())
         case .userCanceled:
             return AnyView(Text("Generation canceled"))
         }
     }
+}
+
+
+#Preview {
+    @Previewable @State var generater =  GenerationContext()
+    GeneratedImageView()
+        .frame(width: 512, height: 512)
+        .environment(generater)
+
 }

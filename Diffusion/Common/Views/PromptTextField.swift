@@ -106,7 +106,7 @@ struct PromptTextField: View {
             .font(.caption)
             #endif
         }
-        .onChange(of: model) { model in
+        .onChange(of: model) { oldValue, newValue in
             updateTokenCount(newText: textBinding)
         }
         .onAppear {

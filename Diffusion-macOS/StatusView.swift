@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct StatusView: View {
-    @EnvironmentObject var generation: GenerationContext
+    @Environment(GenerationContext.self) var generation: GenerationContext
     var pipelineState: Binding<PipelineState>
     
     @State private var showErrorPopover = false
@@ -23,7 +23,7 @@ struct StatusView: View {
                 if result.userCanceled {
                     generation.state = .userCanceled
                 } else {
-                    generation.state = .complete(generation.positivePrompt, result.image, result.lastSeed, result.interval)
+                    generation.state = .complete(generation.positivePrompt, result.image, result.lastSeed, result.interval, result.itsPerSecond)
                 }
             } catch {
                 generation.state = .failed(error)
@@ -75,7 +75,7 @@ struct StatusView: View {
                 Text("Generating \(Int(round(100*fraction)))%")
                 Spacer()
             }
-        case .complete(_, let image, let lastSeed, let interval):
+        case .complete(_, let image, let lastSeed, let interval, let itsPerSec):
             guard let _ = image else {
                 return HStack {
                     Text("Safety checker triggered, please try a different prompt or seed.")
@@ -84,12 +84,17 @@ struct StatusView: View {
             }
                               
             return HStack {
-                let intervalString = String(format: "Time: %.1fs", interval ?? 0)
-                Text(intervalString)
+                VStack {
+                    let intervalString = String(format: "Time: %.1fs", interval ?? 0)
+                    Text(intervalString)
+                    if let itsPerSec {
+                        Text("Its/sec: \(itsPerSec)")
+                    }
+                }
                 Spacer()
                 if generation.seed != lastSeed {
                     
-                    Text(String("Seed: \(formatLargeNumber(lastSeed))"))
+                    Text(String("Seed: \(lastSeed)"))
                     Button("Set") {
                         generation.seed = lastSeed
                     }

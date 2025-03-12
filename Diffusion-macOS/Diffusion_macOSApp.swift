@@ -10,9 +10,11 @@ import SwiftUI
 
 @main
 struct Diffusion_macOSApp: App {
+    @State var generationContext = GenerationContext()
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(generationContext)
         }
     }
 }
