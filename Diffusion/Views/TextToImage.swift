@@ -76,7 +76,7 @@ struct ImageWithPlaceholder: View {
                 }
                 ProgressView(label, value: fraction, total: 1).padding()
             })
-        case .complete(let lastPrompt, let image, _, let interval):
+        case .complete(let lastPrompt, let image, _, let interval, _):
             guard let theImage = image else {
                 return AnyView(Image(systemName: "exclamationmark.triangle").resizable())
             }
@@ -114,7 +114,7 @@ struct TextToImage: View {
             generation.state = .running(nil)
             do {
                 let result = try await generation.generate()
-                generation.state = .complete(generation.positivePrompt, result.image, result.lastSeed, result.interval)
+                generation.state = .complete(generation.positivePrompt, result.image, result.lastSeed, result.interval, result.itsPerSecond)
             } catch {
                 generation.state = .failed(error)
             }
